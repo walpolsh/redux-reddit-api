@@ -49,20 +49,84 @@ console.log("Is there anything else you'd like?");
 function selectedSubreddit(state = 'reactjs', action) {
   switch (action.type) {
     case SELECT_SUBREDDIT:
-      return action.subreddit
+      return action.subreddit;
     default:
-    //  Can I put a default between cases?
-    // Yes you can! JavaScript will drop you back to the default
-    // if it can't find a match
-      return state
+
+      //  Can I put a default between cases?
+      // Yes you can! JavaScript will drop you back to the default
+      // if it can't find a match
+      return state;
   }
 }
 
-function posts (
+function posts(
   state = {
     isFetching: false,
     didInvalidate: false,
-    items: []
+    items: [],
   },
   action
-)
+) {
+  //The Object.assign() method only copies enumerable
+  //and own properties from a source object to a target object.
+  // It uses [[Get]] on the source and [[Set]] on the target,
+  // so it will invoke getters and setters.
+  //
+  // if the action type matches the case then assign new state
+  //merge future state and current state into a new object, push to curent state.
+
+  switch (action.type) {
+    case INVALIDATE_SUBREDDIT:
+      return Object.assign({}, state, {
+        didInvalidate: true,
+      });
+    case REQUEST_POSTS:
+      return Object.assign({}, state, {
+        isFetching: true,
+        didInvalidate: false,
+      });
+    case RECEIVE_POSTS:
+      return Object.assign({}, state, {
+        isFetching: false,
+        didInvalidate: false,
+        items: action.posts,
+        lastUpdated: action.recievedAt,
+      });
+    default:
+      return state;
+  };
+};
+
+//Multi-case - single operation
+
+// This method takes advantage of the fact that if there is no break
+// below a case statement it will continue to execute the next case
+// statement regardless if the case meets the criteria.
+//
+// This is an example of a single operation sequential switch
+// statement, where three different values perform exactly the same.
+
+//We use ES6 computed property syntax so we can update
+//state[action.subreddit] with Object.assign() in a concise way.
+
+function postsBySubreddit(state = {}, action) {
+  switch (action.type) {
+    case INVALIDATE_SUBREDDIT:
+    case RECEIVE_POSTS:
+    case REQUEST_POSTS:
+      return Object.assign({}, state, {
+        [action.subreddit]: posts(state[action.subreddit], action),
+
+        //extracted posts(state, action) that manages
+        //the state of a specific post list
+      });
+
+    //is equivalent to this:
+    // let nextState = {}
+    // nextState[action.subreddit] = posts(state[action.subreddit], action)
+    // return Object.assign({}, state, nextState)
+
+    default:
+      return state;
+  };
+};
